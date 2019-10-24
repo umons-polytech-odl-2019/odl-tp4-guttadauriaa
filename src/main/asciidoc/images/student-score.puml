@@ -1,0 +1,25 @@
+@startuml
+
+class Classroom {
+    +addStudent(student : Student) : void
+    +countStudents() : int
+    +topScorers(course : String, n : int) : List<Student>
+    +successfulStudents() : List<Student>
+}
+
+class Student {
+    +Student(name : String, registrationNumber : String)
+    +setScore(course : String, score : int) : void
+    +getScore(course : String) : OptionalInt
+    +averageScore() : OptionalDouble
+    +bestCourse() : Optional<String>
+    +bestScore() : int
+    +failedCourses() : Set<String>
+    +isSuccessful() : boolean
+    +attendedCourses() : Set<String>
+    +getName() : String
+    +getRegistrationNumber() : String
+}
+
+Classroom o-> Student
+@enduml

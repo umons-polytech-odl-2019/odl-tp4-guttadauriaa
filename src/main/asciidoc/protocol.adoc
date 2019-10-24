@@ -1,0 +1,211 @@
+= Programmation en Java : collections
+François Roland <francois.roland@umons.ac.be>
+2017-10-31
+:icons: font
+:experimental:
+ifdef::backend-html5[]
+:source-highlighter: highlightjs
+endif::[]
+ifdef::backend-pdf[]
+:source-highlighter: coderay
+:notitle:
+
+[discrete]
+= {doctitle}
+endif::[]
+
+Lors de cette séance de TP, nous verrons l'utilisation des collections Java permettant de gérer un ensemble de données.
+
+== Notions
+
+=== Structure de données
+
+Le package `java.util` nous fournit deux hiérarchies particulièrement importantes pour la programmation.
+La première permet de grouper des éléments relativement homogènes.
+La seconde permet de créer des dictionnaires, c'est-à-dire un ensemble de valeurs auxquelles nous accédons à partir d'une clé.
+
+[[collection-hierarchy]]
+.Interfaces et classes principales de la hiérarchie de `Collection`
+image::collection-hierarchy.svg[scaledwidth="90%", align="center"]
+
+[[map-hierarchy]]
+.Interfaces et classes principales de la hiérarchie de `Map`
+image::map-hierarchy.svg[scaledwidth="80%", align="center"]
+
+Chaque interface apporte ses propres fonctionnalités.
+Chaque implémentation possède ses spécificités et ses propres contraintes.
+En fonction de votre usage, vous choisirez l'interface appropriée.
+Vous choisirez ensuite une implémentation de cette interface pour optimiser vos performances.
+
+TIP: Je ne passerai pas en revue les spécifités des interfaces et classes du framework.
+Ce serait bien trop long.
+Je vous renvoie vers https://docs.oracle.com/javase/8/docs/technotes/guides/collections/reference.html[l'aperçu du framework collection], https://docs.oracle.com/javase/8/docs/technotes/guides/collections/overview.html[sa présentation] et https://docs.oracle.com/javase/8/docs/api/java/util/package-summary.html[la Javadoc du package `java.util`].
+Vous trouverez notamment des indications sur les performances des différentes méthodes au début de la page de la Javadoc des classes d'implémentation.
+
+Certaines map ou collections font des hypothèses sur les éléments qu'elles contiennent.
+Les hypothèses les plus courantes portent sur :
+
+* l'implémentation des méthodes `hashCode` et `equals`. Celles-ci sont utilisées par les collections et maps qui utilisent un algorithme de hachage.
+* l'implémentation de l'interface `Comparable` ou d'un `Comparator`. Ceux-ci sont utilisés par les collections et maps qui trient leurs éléments.
+
+[NOTE]
+====
+L'implémentation par défaut des méthodes `hashCode` et `equals` se base sur l'adresse mémoire de l'objet.
+Deux instances différentes seront donc toujours différentes, même si leur contenu est unique.
+Le contrat des ces deux méthodes est plus compliqué que vous pourriez le croire.
+Référez-vous à https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html[la Javadoc de la classe `Object`] pour connaître leur spécification.
+Les méthodes statiques `equals(Object valueA, Object valueB)` et `hash(Object... values)` vous aideront à implémenter correctement ces méthodes.
+La plupart des IDE permettent de les générer facilement en sélectionnant les champs de votre classe.
+
+.Méthodes et interfaces utilisées dans le framework
+image::object-and-comparison.svg[scaledwidth="60%", align="center"]
+
+[source,java]
+.Example d'implémentation des méthodes `equals` et `hashCode`
+----
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Person person = (Person) o;
+    return Objects.equals(firstName, person.firstName) &&
+        Objects.equals(lastName, person.lastName);
+}
+
+@Override
+public int hashCode() {
+    return Objects.hash(firstName, lastName);
+}
+----
+
+====
+
+WARNING: Il est dangereux de baser les méthodes `equals` et `hashCode` de la même classe sur des champs différents.
+Les classes du framework collections font l'hypothèse que ces méthodes se comportent de manière consistante.
+Cette remarque vaut aussi si vous implémentez l'une de ces méthodes mais pas l'autre.
+
+=== Paramètre générique
+
+Les classes et interfaces du framework collections sont prévues pour contenir n'importe quel objet.
+Afin de garder une certaine facilité d'utilisation, celles-ci utilisent des paramètres génériques.
+Sur les figures <<collection-hierarchy>> et <<map-hierarchy>>, vous pouvez observer le paramètre `E` pour la hiérarchie de `Collection` et `K` et `V` pour la hiérarchie de `Map`.
+Ils désignent respectivement le type des éléments de la collection et les types de la clé et de la valeur du dictionnaire.
+
+Lors de l'initialisation d'une collection ou d'une map, il n'est pas nécessaire de répéter les paramètres génériques de la déclaration.
+On se content alors d'écrire `<>`, aussi appelé _diamond operator_.
+
+[source,java]
+.Example d'utilisation d'un paramètre générique.
+----
+Map<String, Student> studentsByName = new HashMap<>(); // <1>
+studentsByName.put("Bridges", new Student("Lisandra", "Bridges"); // <2>
+studentsByName.put("Zimmerman", new Student("Sawyer", "Zimmerman");
+...
+Student wilcoxStudent = studentsByName.get("Wilcox"); // <3>
+----
+<1> Une map est déclarée. Ses clés sont de type `String`. Ses valeurs de type `Student`.
+<2> Le compilateur refusera de compiler ce code si vous essayer d'appeler la méthode `put` avec les mauvais types d'arguments.
+<3> La méthode `get` retourne une valeur de type `Student`.
+
+Cette introduction devrait être suffisante pour réaliser les exercices du TP.
+Si vous souhaitez en savoir plus, vous pouvez consulter https://docs.oracle.com/javase/tutorial/java/generics/index.html[le tutorial d'Oracle sur le sujet].
+
+=== Utilisation des collections
+
+Il existe plusieurs manières d'itérer une collection.
+
+[source,java]
+.Itération d'une collection à l'aide d'un itérateur
+----
+Collection<Element> elements = ...
+for (Iterator<Element> elementIt = elements.iterator(); elementIt.hasNext(); ) {
+    ...
+}
+----
+
+[source,java]
+.Itération d'une collection à l'aide d'une boucle foreach
+----
+Collection<Element> elements = ...
+for (Element element: elements) {
+    ...
+}
+----
+
+[source,java]
+.Iteration d'une collection à l'aide de l'interface `Stream` et d'une lambda expression
+----
+Collection<Element> elements = ...
+elements.stream().forEach(element -> ...)
+----
+
+La première version permet un accès à l'itérateur alors que la seconde utilise un itérateur implicite.
+La troisième version utilise les lambda expressions qui sont disponibles depuis Java 8.
+L'interface `Stream` offre bien plus que la simple possibilité d'appliquer une fonction à tous les éléments d'une collection.
+
+[source,java]
+.Exemple de filtrage et de conversion d'une collection
+----
+Collection<Person> people = ...
+Collection<String> maleFirstnames = people.stream()
+        .filter(person -> person.getGender().equalsTo(Gender.MALE)) // <1>
+        .map(Person::getFirstname) // <2>
+        .sorted() // <3>
+        .distinct() // <4>
+        .collect(Collectors.toList()); // <5>
+----
+<1> Ne garde que les personnes de sexe masculin.
+<2> Transforme le `Stream<Person>` en `Stream<String>` contenant le prénom. Le paramètre est une référence de méthode.
+<3> Trie les prénoms par ordre alphabétique.
+<4> Supprime les doublons.
+<5> Transforme le `Stream<String>` en `Collection<String>`.
+
+[source,java]
+.Exemple de calcul de l'age moyen d'une population
+----
+double averageAge = people.stream()
+        .mapToInt(Person::getAge)
+        .average()
+        .orElse(0.0);
+----
+
+https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html[La Javadoc du package `java.util.stream`] (en bas de la page) et des classes de ce package vous fourniront plus d'informations.
+
+=== Optional
+
+La https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html[classe `java.util.Optional`] est un conteneur de données particulier.
+Cette classe peut-être considérée comme une collection qui peut soit être vide, soit contenir un élément unique non-null.
+Elle est souvent utilisée comme valeur de retour d'une méthode pour signifier à son utilisateur qu'il n'est pas toujours possible de retourner une valeur.
+On la retrouve notamment dans l'API de `java.util.Stream`.
+
+== Exercices
+
+=== Exercice 1
+
+On souhaite gérer une classe d'étudiants.
+Chaque étudiant reçoit les cotes de plusieurs cours.
+Votre objectif est d'implémenter la classes `Student` du diagramme <<exercise1-classes>> et ses méthodes.
+Vous êtes libres d'en ajouter d'autres et de déplacer l'implémentation tant que les méthodes présentes peuvent être appelées par mes tests unitaires.
+Le comportement de certaines méthodes est décrit dans la Javadoc du code fourni.
+Veillez à ce que votre implémentation soit en accord avec ces contraintes.
+Vous trouverez des tests unitaires dans `src/test/java/exercise1` pour vous aider à évaluer votre progression.
+
+[[exercise1-classes]]
+.Classes de l'exercice 1
+image::student-score.svg[scaledwidth="80%", align="center"]
+
+=== Exercice 2
+
+Implémentez maintenant la classe `Classroom`.
+Les consignes sont les mêmes que pour l'exercice 1.
+Vous trouverez des tests unitaires dans `src/test/java/exercise2` pour vous aider à évaluer votre progression.
+
+[bibliography]
+== Références
+
+* Deitel, H. M., & Deitel, P. J. (2002). _Java : comment programmer (4th ed.)_. Les éditions Reynald Goulet INC.
+* Deitel, P. J., & Deitel, H. M. (2007). _Java: how to program (7th ed.)_. Les éditions Reynald Goulet INC.
+* Evans, E. (2003). _Domain-driven design: tackling complexity in the heart of software (1st ed.)_. Addison-Wesley Professional.
+* Manneback, P., & Frémal, S. (2014-2015). _Travaux pratiques de Méthodologie et Langage de Programmation_. UMons.
+* Manneback, P. (2005-2006). _Méthodologie et Langages de Programmation_. UMons.
+* _Java Platform Standard Edition 8 Documentation_. Récupéré de https://docs.oracle.com/javase/8/docs/
